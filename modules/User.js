@@ -10,46 +10,6 @@ const userData = new mongoose.Schema(
       type: String,
       required: [true, "A user must have a email"],
     },
-    password: {
-      type: String,
-      required: [true, "A user must have a password"],
-    },
-    phone: {
-      type: String,
-      required: [true, "A user must have a phone number"],
-    },
-    token: {
-      type: String,
-      required: [true, "A user must have a token"],
-    },
-    role: {
-      type: Number,
-      required: [true, "A user must have a role"],
-    },
-    employees: {
-      type: Number,
-      required: [true, "A user must have a employees"],
-    },
-    business: {
-      type: String,
-      required: [true, "A user must have a business title"],
-    },
-    business_subject: {
-      type: String,
-      required: [true, "A user must have a business subject"],
-    },
-    target: {
-      type: String,
-      required: [true, "A user must have a target"],
-    },
-    page: {
-      type: String,
-      required: [true, "A user must have a page"],
-    },
-    biography: {
-      type: String,
-      required: [true, "A user must have a biography"],
-    }
   },
   { collection: "users" }
 );
