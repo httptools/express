@@ -5,14 +5,14 @@ require("./modules/envConfig");
 
 const db = process.env.DATABASE || "";
 
-mongoose
-  .connect(db)
-  .then((con) => {
+(async () => {
+  try {
+    await mongoose.connect(db);
     console.log("Database connected successfully!");
-  })
-  .catch((error) => {
+  } catch (error) {
     console.error("Error: " + error.message);
-  });
+  }
+})();
 
 // Users Router
 app.use("/api/v1/users", UserRouter);
