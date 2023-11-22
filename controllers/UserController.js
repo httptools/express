@@ -306,11 +306,11 @@ exports.updateUser = async (req, res) => {
   try {
     const authHeader = req.headers["authorization"];
     if (!authHeader) {
-      return res.status(403).json({ status: false, message: "Invalid token" });
+      return res.status(403).json({ status: false, message: "Invalid token or id" });
     }
     const userToken = authHeader && authHeader.split(" ")[1];
     if (!userToken) {
-      return res.status(403).json({ status: false, message: "Invalid token" });
+      return res.status(403).json({ status: false, message: "Invalid token or id" });
     }
 
     const id = await User.findById(req.params.id);
@@ -330,7 +330,7 @@ exports.updateUser = async (req, res) => {
       ) {
         return res
           .status(400)
-          .json({ status: false, message: "Invalid email" });
+          .json({ status: false, message: "Invalid email format" });
       }
 
       const findUser = await User.findOne({ email: req.body.email });
@@ -377,7 +377,7 @@ exports.updateUser = async (req, res) => {
       if (err) {
         return res
           .status(403)
-          .json({ status: false, message: "Invalid token" });
+          .json({ status: false, message: "Invalid token or id" });
       }
     });
 
@@ -388,7 +388,7 @@ exports.updateUser = async (req, res) => {
     );
 
     if (!user) {
-      return res.status(403).json({ status: false, message: "Invalid token" });
+      return res.status(403).json({ status: false, message: "Invalid token or id" });
     }
 
     const NewUserData = await User.findById(user._id);
@@ -474,7 +474,7 @@ exports.deleteUser = async (req, res) => {
     if (!match) {
       res.status(400).json({
         status: false,
-        message: "Incorrect email or password",
+        message: "Incorrect token or password",
       });
       return;
     }
