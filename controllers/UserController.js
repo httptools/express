@@ -9,92 +9,91 @@ const bcrypt = require("bcrypt");
  * @returns
  */
 exports.createUser = async (req, res) => {
-  console.log(req.body);
-  if (
-    !req.body ||
-    !req.body.name ||
-    !req.body.email ||
-    !req.body.password ||
-    !req.body.phone ||
-    !req.body.employees ||
-    !req.body.business ||
-    !req.body.business_subject ||
-    !req.body.target ||
-    !req.body.page ||
-    !req.body.biography
-  ) {
-    res.status(400).json({
-      status: false,
-      message: "please enter all data",
-    });
-    return;
-  }
-
-  if (typeof req.body.password !== "string") {
-    return res
-      .status(400)
-      .json({ status: false, message: "Password must be a string" });
-  }
-
-  if (typeof req.body.email !== "string") {
-    return res
-      .status(400)
-      .json({ status: false, message: "Email must be a string" });
-  }
-
-  if (typeof req.body.name !== "string") {
-    return res
-      .status(400)
-      .json({ status: false, message: "Name must be a string" });
-  }
-
-  if (typeof req.body.phone !== "string") {
-    return res
-      .status(400)
-      .json({ status: false, message: "Phone must be a string" });
-  }
-
-  if (typeof req.body.employees !== "string") {
-    return res
-      .status(400)
-      .json({ status: false, message: "Employees must be a string" });
-  }
-
-  if (typeof req.body.business !== "string") {
-    return res
-      .status(400)
-      .json({ status: false, message: "Business must be a string" });
-  }
-
-  if (typeof req.body.business_subject !== "string") {
-    return res
-      .status(400)
-      .json({ status: false, message: "Business Subject must be a string" });
-  }
-
-  if (typeof req.body.target !== "string") {
-    return res
-      .status(400)
-      .json({ status: false, message: "Target must be a string" });
-  }
-
-  if (typeof req.body.page !== "string") {
-    return res
-      .status(400)
-      .json({ status: false, message: "Page must be a string" });
-  }
-
-  if (typeof req.body.biography !== "string") {
-    return res
-      .status(400)
-      .json({ status: false, message: "Biography must be a string" });
-  }
-
-  if (!/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(req.body.email)) {
-    return res.status(400).json({ status: false, message: "Invalid email" });
-  }
-
   try {
+    if (
+      !req.body ||
+      !req.body.name ||
+      !req.body.email ||
+      !req.body.password ||
+      !req.body.phone ||
+      !req.body.employees ||
+      !req.body.business ||
+      !req.body.business_subject ||
+      !req.body.target ||
+      !req.body.page ||
+      !req.body.biography
+    ) {
+      res.status(400).json({
+        status: false,
+        message: "please enter all data",
+      });
+      return;
+    }
+
+    if (typeof req.body.password !== "string") {
+      return res
+        .status(400)
+        .json({ status: false, message: "Password must be a string" });
+    }
+
+    if (typeof req.body.email !== "string") {
+      return res
+        .status(400)
+        .json({ status: false, message: "Email must be a string" });
+    }
+
+    if (typeof req.body.name !== "string") {
+      return res
+        .status(400)
+        .json({ status: false, message: "Name must be a string" });
+    }
+
+    if (typeof req.body.phone !== "string") {
+      return res
+        .status(400)
+        .json({ status: false, message: "Phone must be a string" });
+    }
+
+    if (typeof req.body.employees !== "string") {
+      return res
+        .status(400)
+        .json({ status: false, message: "Employees must be a string" });
+    }
+
+    if (typeof req.body.business !== "string") {
+      return res
+        .status(400)
+        .json({ status: false, message: "Business must be a string" });
+    }
+
+    if (typeof req.body.business_subject !== "string") {
+      return res
+        .status(400)
+        .json({ status: false, message: "Business Subject must be a string" });
+    }
+
+    if (typeof req.body.target !== "string") {
+      return res
+        .status(400)
+        .json({ status: false, message: "Target must be a string" });
+    }
+
+    if (typeof req.body.page !== "string") {
+      return res
+        .status(400)
+        .json({ status: false, message: "Page must be a string" });
+    }
+
+    if (typeof req.body.biography !== "string") {
+      return res
+        .status(400)
+        .json({ status: false, message: "Biography must be a string" });
+    }
+
+    if (!/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(req.body.email)) {
+      return res.status(400).json({ status: false, message: "Invalid email" });
+    }
+
     const existingUser = await User.findOne({
       $or: [{ email: req.body.email }, { phone: req.body.phone }],
     });
@@ -121,6 +120,7 @@ exports.createUser = async (req, res) => {
       phone: req.body.phone,
       token: token,
       role: 0,
+      active: 1,
       employees: req.body.employees,
       business: req.body.business,
       business_subject: req.body.business_subject,
@@ -134,6 +134,7 @@ exports.createUser = async (req, res) => {
       message: "user created successfully",
       token: token,
       id: user._id,
+      active: 1,
       role: user.role,
     });
   } catch (error) {
@@ -152,28 +153,27 @@ exports.createUser = async (req, res) => {
  * @returns
  */
 exports.Login = async (req, res) => {
-  console.log(req.body);
-  if (!req.body || !req.body.email || !req.body.password) {
-    res.status(400).json({
-      status: false,
-      message: "please enter all data",
-    });
-    return;
-  }
-
-  if (typeof req.body.password !== "string") {
-    return res
-      .status(400)
-      .json({ status: false, message: "Password must be a string" });
-  }
-
-  if (typeof req.body.email !== "string") {
-    return res
-      .status(400)
-      .json({ status: false, message: "Email must be a string" });
-  }
-
   try {
+    if (!req.body || !req.body.email || !req.body.password) {
+      res.status(400).json({
+        status: false,
+        message: "please enter all data",
+      });
+      return;
+    }
+
+    if (typeof req.body.password !== "string") {
+      return res
+        .status(400)
+        .json({ status: false, message: "Password must be a string" });
+    }
+
+    if (typeof req.body.email !== "string") {
+      return res
+        .status(400)
+        .json({ status: false, message: "Email must be a string" });
+    }
+
     const user = await User.findOne({
       email: req.body.email,
     });
@@ -206,6 +206,7 @@ exports.Login = async (req, res) => {
       message: "user logged in successfully",
       token: token,
       id: user._id,
+      active: user.active,
       role: user.role,
     });
   } catch (error) {
@@ -295,22 +296,26 @@ exports.getUser = async (req, res) => {
  * @returns
  */
 exports.updateUser = async (req, res) => {
-  if (!req.body) {
-    res.status(400).json({
-      status: false,
-      message: "please enter all data",
-    });
-    return;
-  }
-
   try {
+    if (!req.body) {
+      res.status(400).json({
+        status: false,
+        message: "please enter all data",
+      });
+      return;
+    }
+
     const authHeader = req.headers["authorization"];
     if (!authHeader) {
-      return res.status(403).json({ status: false, message: "Invalid token or id" });
+      return res
+        .status(403)
+        .json({ status: false, message: "Invalid token or id" });
     }
     const userToken = authHeader && authHeader.split(" ")[1];
     if (!userToken) {
-      return res.status(403).json({ status: false, message: "Invalid token or id" });
+      return res
+        .status(403)
+        .json({ status: false, message: "Invalid token or id" });
     }
 
     const id = await User.findById(req.params.id);
@@ -362,10 +367,17 @@ exports.updateUser = async (req, res) => {
       }
     }
 
-    if (req.body.role) {
+    if (req.body.role !== undefined) {
       return res.status(403).json({
         status: false,
         message: "Cannot update role by user",
+      });
+    }
+
+    if (req.body.active !== undefined) {
+      return res.status(403).json({
+        status: false,
+        message: "Cannot update active by user",
       });
     }
 
@@ -388,7 +400,9 @@ exports.updateUser = async (req, res) => {
     );
 
     if (!user) {
-      return res.status(403).json({ status: false, message: "Invalid token or id" });
+      return res
+        .status(403)
+        .json({ status: false, message: "Invalid token or id" });
     }
 
     const NewUserData = await User.findById(user._id);
@@ -414,21 +428,21 @@ exports.updateUser = async (req, res) => {
  * @returns
  */
 exports.deleteUser = async (req, res) => {
-  if (!req.body || !req.body.password) {
-    res.status(400).json({
-      status: false,
-      message: "please enter all data",
-    });
-    return;
-  }
-
-  if (typeof req.body.password !== "string") {
-    return res
-      .status(400)
-      .json({ status: false, message: "Password must be a string" });
-  }
-
   try {
+    if (!req.body || !req.body.password) {
+      res.status(400).json({
+        status: false,
+        message: "please enter all data",
+      });
+      return;
+    }
+
+    if (typeof req.body.password !== "string") {
+      return res
+        .status(400)
+        .json({ status: false, message: "Password must be a string" });
+    }
+
     const authHeader = req.headers["authorization"];
     if (!authHeader) {
       return res
