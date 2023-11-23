@@ -7,13 +7,12 @@ const UserRouter = express.Router();
 UserRouter.route("/")
   .post(UserController.createUser)
   .get(UserController.getAllUser);
-  
+
 UserRouter.route("/:id")
   .get(UserController.getUser)
   .patch(UserController.updateUser)
   .delete(UserController.deleteUser);
 
-UserRouter.route("/login")
-  .post(UserController.Login);
+UserRouter.route("/login").post(UserController.Login);
 
 module.exports = UserRouter;

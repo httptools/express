@@ -1,6 +1,9 @@
 const User = require("../modules/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const { promisify } = require("util");
+
+const verifyJwt = promisify(jwt.verify);
 
 /**
  * Register API (for users)
@@ -230,12 +233,26 @@ exports.getAllUser = async (req, res) => {
     const limit = 10;
 
     const totalCount = await User.countDocuments();
+    if (!totalCount) {
+      return res.status(400).json({
+        status: false,
+        error: "Error in getting data",
+      });
+    }
+
     const pagesCount = Math.ceil(totalCount / limit);
 
     const data = await User.find()
       .sort({ _id: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
+
+    if (!data) {
+      return res.status(400).json({
+        status: false,
+        error: "Error in getting data",
+      });
+    }
 
     if (data.length === 0) {
       return res.status(200).json({
@@ -275,12 +292,35 @@ exports.getUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
 
-    const { password, token, phone, ...data } = user.toObject();
+    if (!user) {
+      return res.status(400).json({
+        status: false,
+        error: "User not found",
+      });
+    }
 
-    res.status(200).json({
-      status: true,
-      data,
-    });
+    if (user.role === "1" || user.role === 1) {
+      const {
+        password,
+        token,
+        business,
+        business_subject,
+        employees,
+        target,
+        phone,
+        ...data
+      } = user.toObject();
+      return res.status(200).json({
+        status: true,
+        data,
+      });
+    } else {
+      const { password, token, phone, ...data } = user.toObject();
+      return res.status(200).json({
+        status: true,
+        data,
+      });
+    }
   } catch (error) {
     return res.status(400).json({
       status: false,
@@ -297,12 +337,12 @@ exports.getUser = async (req, res) => {
  */
 exports.updateUser = async (req, res) => {
   try {
+    // Check if request body is provided
     if (!req.body) {
-      res.status(400).json({
+      return res.status(400).json({
         status: false,
-        message: "please enter all data",
+        message: "Please enter all data",
       });
-      return;
     }
 
     const authHeader = req.headers["authorization"];
@@ -311,6 +351,7 @@ exports.updateUser = async (req, res) => {
         .status(403)
         .json({ status: false, message: "Invalid token or id" });
     }
+
     const userToken = authHeader && authHeader.split(" ")[1];
     if (!userToken) {
       return res
@@ -318,8 +359,8 @@ exports.updateUser = async (req, res) => {
         .json({ status: false, message: "Invalid token or id" });
     }
 
+    // Find user by ID
     const id = await User.findById(req.params.id);
-
     if (!id) {
       return res.status(400).json({
         status: false,
@@ -329,6 +370,7 @@ exports.updateUser = async (req, res) => {
 
     const userID = id._id;
 
+    // Validate email format and check for duplicates
     if (req.body.email) {
       if (
         !/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(req.body.email)
@@ -352,6 +394,7 @@ exports.updateUser = async (req, res) => {
       }
     }
 
+    // Check for duplicate phone numbers
     if (req.body.phone) {
       const findUser = await User.findOne({ phone: req.body.phone });
 
@@ -367,32 +410,26 @@ exports.updateUser = async (req, res) => {
       }
     }
 
-    if (req.body.role !== undefined) {
-      return res.status(403).json({
-        status: false,
-        message: "Cannot update role by user",
-      });
+    // Prevent updating certain fields by the user
+    const disallowedFields = ["role", "active"];
+    for (const field of disallowedFields) {
+      if (req.body[field] !== undefined) {
+        return res.status(403).json({
+          status: false,
+          message: `Cannot update ${field} by user`,
+        });
+      }
     }
 
-    if (req.body.active !== undefined) {
-      return res.status(403).json({
-        status: false,
-        message: "Cannot update active by user",
-      });
-    }
-
+    // Hash the password if provided
     if (req.body.password) {
       req.body.password = await bcrypt.hash(req.body.password, 10);
     }
 
-    jwt.verify(userToken, process.env.APP_KEY, (err) => {
-      if (err) {
-        return res
-          .status(403)
-          .json({ status: false, message: "Invalid token or id" });
-      }
-    });
+    // Verify the JWT token
+    await verifyJwt(userToken, process.env.APP_KEY);
 
+    // Update user
     const user = await User.findOneAndUpdate(
       { token: userToken, _id: userID },
       req.body,
@@ -405,18 +442,18 @@ exports.updateUser = async (req, res) => {
         .json({ status: false, message: "Invalid token or id" });
     }
 
-    const NewUserData = await User.findById(user._id);
+    // Get updated user data
+    const { password, ...data } = await User.findById(user._id).lean();
 
-    const { password, ...data } = NewUserData.toObject();
-
-    res.status(200).json({
+    return res.status(200).json({
       status: true,
       data,
     });
   } catch (error) {
-    return res.status(400).json({
+    console.error(error);
+    return res.status(500).json({
       status: false,
-      error: "User not found",
+      error: "Internal Server Error",
     });
   }
 };
@@ -429,14 +466,15 @@ exports.updateUser = async (req, res) => {
  */
 exports.deleteUser = async (req, res) => {
   try {
+    // Check if request body and password are provided
     if (!req.body || !req.body.password) {
-      res.status(400).json({
+      return res.status(400).json({
         status: false,
-        message: "please enter all data",
+        message: "Please enter all data",
       });
-      return;
     }
 
+    // Check if password is a string
     if (typeof req.body.password !== "string") {
       return res
         .status(400)
@@ -449,6 +487,7 @@ exports.deleteUser = async (req, res) => {
         .status(403)
         .json({ status: false, message: "Invalid token or password" });
     }
+
     const userToken = authHeader && authHeader.split(" ")[1];
     if (!userToken) {
       return res
@@ -456,8 +495,8 @@ exports.deleteUser = async (req, res) => {
         .json({ status: false, message: "Invalid token or password" });
     }
 
+    // Find user by ID
     const id = await User.findById(req.params.id);
-
     if (!id) {
       return res.status(400).json({
         status: false,
@@ -467,51 +506,47 @@ exports.deleteUser = async (req, res) => {
 
     const userID = id._id;
 
-    jwt.verify(userToken, process.env.APP_KEY, (err) => {
-      if (err) {
-        return res
-          .status(403)
-          .json({ status: false, message: "Invalid token or password" });
-      }
-    });
+    // Verify the JWT token
+    await verifyJwt(userToken, process.env.APP_KEY);
 
+    // Check if the user associated with the token and ID exists
     const getData = await User.findOne({ token: userToken, _id: userID });
-
     if (!getData) {
       return res
         .status(403)
         .json({ status: false, message: "Invalid token or password" });
     }
 
+    // Compare the provided password with the stored hashed password
     const match = await bcrypt.compare(req.body.password, getData.password);
-
     if (!match) {
-      res.status(400).json({
+      return res.status(400).json({
         status: false,
         message: "Incorrect token or password",
       });
-      return;
     }
 
-    const user = await User.deleteOne(
-      { token: userToken, _id: userID },
-      { new: true, runValidators: true }
-    );
+    // Delete the user
+    const deletedUser = await User.findOneAndDelete({
+      token: userToken,
+      _id: userID,
+    });
 
-    if (!user) {
+    if (!deletedUser) {
       return res
         .status(403)
         .json({ status: false, message: "Invalid token or password" });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       status: true,
-      message: "user deleted successfully",
+      message: "User deleted successfully",
     });
   } catch (error) {
-    return res.status(400).json({
+    console.error(error);
+    return res.status(500).json({
       status: false,
-      error: "User not found",
+      error: "Internal Server Error",
     });
   }
 };
